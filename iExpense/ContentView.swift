@@ -17,11 +17,11 @@ struct ExpenseItem: Identifiable, Codable {
 class Expenses: ObservableObject {
     @Published var items = [ExpenseItem]() {
         didSet {
-               let encoder = JSONEncoder()
-               if let encoded = try? encoder.encode(items) {
-                   UserDefaults.standard.set(encoded, forKey: "Items")
-               }
-           }
+            let encoder = JSONEncoder()
+            if let encoded = try? encoder.encode(items) {
+                UserDefaults.standard.set(encoded, forKey: "Items")
+            }
+        }
     }
     init() {
         if let items = UserDefaults.standard.data(forKey: "Items") {
@@ -31,7 +31,7 @@ class Expenses: ObservableObject {
                 return
             }
         }
-
+        
         self.items = []
     }
     
@@ -43,28 +43,37 @@ struct ContentView: View {
     
     var body: some View {
         NavigationView {
-            List {
-                ForEach(expenses.items) { item in
-                    HStack {
+                List {
+                    ForEach(expenses.items) { item in
+                        HStack {
                             VStack(alignment: .leading) {
                                 Text(item.name)
                                     .font(.headline)
                                 Text(item.type)
                             }
-
                             Spacer()
-                            Text("$\(item.amount)")
+                            if item.amount <= 10 {
+                                Text("$\(item.amount)")
+                                    .foregroundColor(.green)
+                            } else if item.amount <= 100 && item.amount > 10 {
+                                Text("$\(item.amount)")
+                                    .foregroundColor(.orange)
+                            } else {
+                                Text("$\(item.amount)")
+                                    .foregroundColor(.red)
+                                    .bold()
+                            }
                         }
+                    }
+                    .onDelete(perform: removeItems)
                 }
-                .onDelete(perform: removeItems)
-            }
             .navigationBarTitle("iExpense")
-            .navigationBarItems(trailing:
-                Button(action: {
-                    self.showingAddExpense = true
-                }) {
-                    Image(systemName: "plus")
-                }
+            .navigationBarItems(leading: EditButton(), trailing:
+                                    Button(action: {
+                                        self.showingAddExpense = true
+                                    }) {
+                                        Image(systemName: "plus")
+                                    }
             )
             .sheet(isPresented: $showingAddExpense) {
                 AddView(expenses: self.expenses)
@@ -75,6 +84,7 @@ struct ContentView: View {
     func removeItems(at offsets: IndexSet) {
         expenses.items.remove(atOffsets: offsets)
     }
+    
 }
 
 struct ContentView_Previews: PreviewProvider {
